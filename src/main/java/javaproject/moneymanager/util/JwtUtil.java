@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -23,9 +24,7 @@ public class JwtUtil {
 	private long expirationMinutes;
 
 	/**
-	 * Generate a signed JWT containing the given subject (typically the user's email or id).
-	 * @param subject subject to place in the token (e.g. user email)
-	 * @return compact JWT string
+	 * Generate a signed JWT with subject (email or user id)
 	 */
 	public String generateToken(String subject) {
 		if (subject == null) {
@@ -44,7 +43,14 @@ public class JwtUtil {
 	}
 
 	/**
-	 * Parse token and return subject (email/user id). Throws runtime exception if token is invalid/expired.
+	 * Backwards-compatible method expected by JwtRequestFilter
+	 */
+	public String extractUsername(String token) {
+		return getSubjectFromToken(token);
+	}
+
+	/**
+	 * Parse token and return subject (email/user id)
 	 */
 	public String getSubjectFromToken(String token) {
 		SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
@@ -56,16 +62,43 @@ public class JwtUtil {
 		return claims.getSubject();
 	}
 
-	/**
-	 * Validate token (returns true when token can be parsed and not expired).
-	 */
-	public boolean validateToken(String token) {
+	private boolean isTokenExpired(String token) {
 		try {
-			getSubjectFromToken(token);
+			SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+			Claims claims = Jwts.parserBuilder()
+					.setSigningKey(key)
+					.build()
+					.parseClaimsJws(token)
+					.getBody();
+
+			Date expiration = claims.getExpiration();
+			return expiration.before(new Date());
+		} catch (io.jsonwebtoken.ExpiredJwtException ex) {
 			return true;
+		}
+	}
+
+	/**
+	 * Validate token — checks signature, expiration, and username match
+	 */
+	public boolean validateToken(String token, UserDetails userDetails) {
+		try {
+			final String username = getSubjectFromToken(token);
+			return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
 		} catch (Exception ex) {
 			return false;
 		}
 	}
 
+	/**
+	 * Simplified validation (just checks token integrity & expiration)
+	 */
+	public boolean validateToken(String token) {
+		try {
+			getSubjectFromToken(token); // will throw if invalid
+			return !isTokenExpired(token);
+		} catch (Exception ex) {
+			return false;
+		}
+	}
 }
