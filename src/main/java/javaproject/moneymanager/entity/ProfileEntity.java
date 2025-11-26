@@ -37,13 +37,14 @@ public class ProfileEntity {
   private LocalDateTime createdAt;
   @CreationTimestamp
   private LocalDateTime updatedAt;
+  @Column(nullable = false)
   private Boolean isActive;
   private String activationToken;
   
   @PrePersist
   public void prePersist() {
     if (this.isActive == null) {
-      this.isActive = false;
+      this.isActive = true;
     }
   }
   
