@@ -1,6 +1,7 @@
 package javaproject.moneymanager.service;
 
 import java.util.Map;
+// import java.util.UUID;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class ProfileService {
 
   private final ProfileRepository profileRepository;
-  private final EmailService emailService;
+  // private final EmailService emailService;
   private final PasswordEncoder passwordEncoder;
   private final AuthenticationManager authenticationManager;
   private final JwtUtil jwtUtil;
@@ -34,14 +35,11 @@ public class ProfileService {
 
   public ProfileDTO registerProfile(ProfileDTO profileDTO) {
     ProfileEntity newProfile = toEntity(profileDTO);
-    newProfile.setActivationToken(UUID.randomUUID().toString());
-    // newProfile.setPassword(passwordEncoder.encode(profileDTO.getPassword()));
+    // newProfile.setActivationToken(UUID.randomUUID().toString());
+    // auto-activate account immediately so user can login without email
+    newProfile.setIsActive(true);
+    // newProfile.setActivationToken(null);
     newProfile = profileRepository.save(newProfile);
-    //send activation email 
-    String activationLink = activationURL + "/api/v1.0/activate?token=" + newProfile.getActivationToken();
-    String subject = "Activate your Money Manger account";
-    String body = "Click on the following link to activate your account: " + activationLink;
-    emailService.sendEmail(newProfile.getEmail(), subject, body);
 
     return toDTO(newProfile);
   }
