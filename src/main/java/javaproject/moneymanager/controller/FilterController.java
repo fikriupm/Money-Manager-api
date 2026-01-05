@@ -29,7 +29,7 @@ public class FilterController {
   public ResponseEntity<?> filterTransactions(@RequestBody FilterDTO filter){
 
     //preparing the data or validation
-    LocalDate startDate = filter.getStartDate() != null ? filter.getStartDate() : LocalDate.MIN;
+    LocalDate startDate = filter.getStartDate() != null ? filter.getStartDate() : LocalDate.of(1900, 1, 1);
     LocalDate endDate = filter.getEndDate() != null ? filter.getEndDate() : LocalDate.now();
     String keyword = filter.getKeyword() != null ? filter.getKeyword() : "";
     String sortField = filter.getSortField() != null ? filter.getSortField() : "date";
