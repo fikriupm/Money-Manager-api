@@ -89,11 +89,11 @@ public class ProfileService {
 
   public ProfileDTO getPublicProfile(String email){
     ProfileEntity currentUser = null;
-    if(email == null){
-      getCurrentProfile();
+    if (email == null) {
+    currentUser = getCurrentProfile();
     } else {
       currentUser = profileRepository.findByEmail(email)
-        .orElseThrow(() -> new UsernameNotFoundException("Profile not found with email:" + email));
+          .orElseThrow(() -> new UsernameNotFoundException("Profile not found with email:" + email));
     }
 
     return ProfileDTO.builder()
